@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>4–6 breathing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #E9ECEA;
+    --ink: #48524F;
+    --muted: #7C8783;
+    --line: #C9D0CC;
+    --field: #F3F5F4;
+    --start-bg: #B9D2C3;
+    --start-ink: #2F3A36;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #262B2D;
+      --ink: #D9DEDB;
+      --muted: #96A09C;
+      --line: #454D4F;
+      --field: #2E3436;
+      --start-bg: #B9D2C3;
+      --start-ink: #2F3A36;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #262B2D;
+    --ink: #D9DEDB;
+    --muted: #96A09C;
+    --line: #454D4F;
+    --field: #2E3436;
+    --start-bg: #B9D2C3;
+    --start-ink: #2F3A36;
+  }
+
+  *, *::before, *::after { box-sizing: inherit; }
+  html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0;
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Cormorant Garamond", "Cormorant", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-weight: 400;
+    display: grid;
+    place-items: center;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  main {
+    width: 100%;
+    padding: 0.5rem 0.5rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .visually-hidden {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap;
+  }
+
+  .stage {
+    position: relative;
+    width: min(96vw, 66vh, 760px);
+    aspect-ratio: 1;
+  }
+  #count {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: clamp(3rem, 12vmin, 5.5rem);
+    font-weight: 300;
+    line-height: 1;
+    color: var(--start-ink);
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+  }
+  .stage canvas { width: 100%; height: 100%; display: block; }
+
+  #cue {
+    margin: 0.25rem 0 0;
+    font-size: 2rem;
+    font-weight: 300;
+    letter-spacing: 0.02em;
+    min-height: 1.5em;
+  }
+  #clock {
+    margin: 0.25rem 0 0;
+    font-size: 1.25rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+  }
+
+  .controls {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  button, input {
+    font: inherit;
+    color: inherit;
+  }
+  button {
+    font-weight: 500;
+    font-size: 1.2rem;
+    letter-spacing: 0.03em;
+    min-width: 6.5rem;
+    padding: 0.7rem 1.4rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: transparent;
+    cursor: pointer;
+    transition: opacity 0.25s ease, background-color 0.25s ease;
+  }
+  #start {
+    background: var(--start-bg);
+    border-color: var(--start-bg);
+    color: var(--start-ink);
+  }
+  button:disabled { opacity: 0.4; cursor: default; }
+  #reset {
+    min-width: 0;
+    border-color: transparent;
+    color: var(--muted);
+    padding-inline: 0.8rem;
+  }
+  #reset[hidden] { display: none; }
+
+  .minutes {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-left: 0.5rem;
+    color: var(--muted);
+    font-size: 1.2rem;
+  }
+  .minutes input {
+    width: 4.25rem;
+    padding: 0.65rem 0.4rem;
+    text-align: center;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--field);
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .minutes input:disabled { opacity: 0.5; }
+
+  :focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 3px;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1 class="visually-hidden">4–6 breathing</h1>
+
+  <div class="stage"><canvas id="blob" aria-hidden="true"></canvas><span id="count" aria-hidden="true"></span></div>
+
+  <p id="cue" aria-live="polite">Four seconds in, six seconds out</p>
+  <p id="clock">10:00</p>
+
+  <div class="controls">
+    <button id="start" type="button">Start</button>
+    <button id="pause" type="button" disabled>Pause</button>
+    <button id="reset" type="button" hidden>Reset</button>
+    <label class="minutes">Minutes
+      <input id="mins" type="number" inputmode="numeric" min="1" max="180" step="1" value="10">
+    </label>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var IN = 4, OUT = 6, CYCLE = IN + OUT;
+
+  var canvas = document.getElementById('blob');
+  var ctx = canvas.getContext('2d');
+  var cueEl = document.getElementById('cue');
+  var countEl = document.getElementById('count');
+  var clockEl = document.getElementById('clock');
+  var startBtn = document.getElementById('start');
+  var pauseBtn = document.getElementById('pause');
+  var resetBtn = document.getElementById('reset');
+  var minsEl = document.getElementById('mins');
+
+  /* ---------- session state ---------- */
+  var state = 'idle';            // idle | running | paused | done
+  var duration = 600;            // seconds
+  var elapsed = 0;               // seconds of breathing so far
+  var startedAt = 0;
+  var endTimer = null;
+  var level = 0;                 // 0 = resting size, 1 = full breath
+  var wob = Math.random() * 100; // time axis for the wobble
+
+  /* ---------- gong (synthesised, no audio files) ---------- */
+  var audio = null;
+  function ensureAudio() {
+    try {
+      if (!audio) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) audio = new AC();
+      }
+      if (audio && audio.state === 'suspended') audio.resume();
+    } catch (e) { audio = null; }
+  }
+
+  function gong() {
+    if (!audio) return;
+    try {
+      var now = audio.currentTime + 0.03;
+      var out = audio.createGain();
+      out.gain.value = 0.42;
+      var lp = audio.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.setValueAtTime(4200, now);
+      lp.frequency.exponentialRampToValueAtTime(650, now + 6);
+      out.connect(lp);
+      lp.connect(audio.destination);
+
+      var f0 = 132;
+      // [frequency ratio, loudness, ring time in seconds]
+      var partials = [
+        [1.00, 1.00, 10], [1.503, 0.55, 8], [2.00, 0.50, 7.5], [2.71, 0.34, 6],
+        [3.44, 0.24, 4.8], [4.23, 0.16, 3.6], [5.60, 0.10, 2.6], [6.90, 0.06, 1.8]
+      ];
+      partials.forEach(function (p, i) {
+        [1, 1 + 0.0025 + i * 0.0006].forEach(function (detune) {
+          var osc = audio.createOscillator();
+          var g = audio.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = f0 * p[0] * detune;
+          g.gain.setValueAtTime(0.0001, now);
+          g.gain.linearRampToValueAtTime(p[1] * 0.5, now + 0.015 + i * 0.004);
+          g.gain.exponentialRampToValueAtTime(0.0001, now + p[2]);
+          osc.connect(g);
+          g.connect(out);
+          osc.start(now);
+          osc.stop(now + p[2] + 0.1);
+        });
+      });
+
+      // the soft thud of the mallet
+      var len = Math.floor(audio.sampleRate * 0.3);
+      var buf = audio.createBuffer(1, len, audio.sampleRate);
+      var d = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      var src = audio.createBufferSource();
+      src.buffer = buf;
+      var nf = audio.createBiquadFilter();
+      nf.type = 'lowpass';
+      nf.frequency.value = 520;
+      var ng = audio.createGain();
+      ng.gain.setValueAtTime(0.5, now);
+      ng.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
+      src.connect(nf); nf.connect(ng); ng.connect(out);
+      src.start(now);
+    } catch (e) { /* sound is optional */ }
+  }
+
+  /* ---------- keep the screen awake during a session ---------- */
+  var wake = null;
+  function holdScreen() {
+    try {
+      if (navigator.wakeLock && !wake) {
+        navigator.wakeLock.request('screen').then(function (w) {
+          wake = w;
+          w.addEventListener('release', function () { wake = null; });
+        }).catch(function () {});
+      }
+    } catch (e) {}
+  }
+  function releaseScreen() {
+    try { if (wake) wake.release(); } catch (e) {}
+    wake = null;
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && state === 'running') holdScreen();
+  });
+
+  /* ---------- controls ---------- */
+  function readMinutes() {
+    var m = Math.round(Number(minsEl.value));
+    if (!isFinite(m) || m < 1) m = 10;
+    if (m > 180) m = 180;
+    return m;
+  }
+
+  function fmt(s) {
+    s = Math.max(0, Math.ceil(s - 0.001));
+    var m = Math.floor(s / 60), r = s % 60;
+    return m + ':' + (r < 10 ? '0' : '') + r;
+  }
+
+  var lastCue = '', lastClock = '';
+  function setCue(t) { if (t !== lastCue) { cueEl.textContent = t; lastCue = t; } }
+  function setClock(t) { if (t !== lastClock) { clockEl.textContent = t; lastClock = t; } }
+  var lastCount = '';
+  function setCount(t) { if (t !== lastCount) { countEl.textContent = t; lastCount = t; } }
+
+  function syncControls() {
+    startBtn.textContent = state === 'paused' ? 'Resume' : 'Start';
+    startBtn.disabled = state === 'running';
+    pauseBtn.disabled = state !== 'running';
+    resetBtn.hidden = state !== 'paused';
+    minsEl.disabled = state === 'running';
+  }
+
+  function start() {
+    if (state === 'running') return;
+    ensureAudio();
+    if (state !== 'paused') {
+      duration = readMinutes() * 60;
+      minsEl.value = duration / 60;
+      elapsed = 0;
+      gong();
+    }
+    startedAt = performance.now() - elapsed * 1000;
+    clearTimeout(endTimer);
+    endTimer = setTimeout(finish, Math.max(0, (duration - elapsed) * 1000));
+    state = 'running';
+    holdScreen();
+    syncControls();
+    pauseBtn.focus({ preventScroll: true });
+  }
+
+  function pause() {
+    if (state !== 'running') return;
+    elapsed = Math.min(duration, (performance.now() - startedAt) / 1000);
+    clearTimeout(endTimer);
+    state = 'paused';
+    releaseScreen();
+    syncControls();
+    startBtn.focus({ preventScroll: true });
+  }
+
+  function reset() {
+    clearTimeout(endTimer);
+    duration = readMinutes() * 60;
+    elapsed = 0;
+    state = 'idle';
+    releaseScreen();
+    syncControls();
+  }
+
+  function finish() {
+    if (state !== 'running') return;
+    clearTimeout(endTimer);
+    elapsed = duration;
+    state = 'done';
+    gong();
+    releaseScreen();
+    syncControls();
+  }
+
+  startBtn.addEventListener('click', start);
+  pauseBtn.addEventListener('click', pause);
+  resetBtn.addEventListener('click', reset);
+  minsEl.addEventListener('input', function () {
+    if (state !== 'running' && minsEl.value !== '') reset();
+  });
+  minsEl.addEventListener('change', function () {
+    minsEl.value = readMinutes();
+    if (state !== 'running') reset();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.code !== 'Space') return;
+    var tag = e.target && e.target.tagName;
+    if (tag === 'BUTTON' || tag === 'INPUT') return;
+    e.preventDefault();
+    if (state === 'running') pause(); else start();
+  });
+
+  /* ---------- noise, for the living edge ---------- */
+  var perm = new Uint8Array(512);
+  (function () {
+    var p = [], i, j, t;
+    for (i = 0; i < 256; i++) p[i] = i;
+    for (i = 255; i > 0; i--) {
+      j = Math.floor(Math.random() * (i + 1));
+      t = p[i]; p[i] = p[j]; p[j] = t;
+    }
+    for (i = 0; i < 512; i++) perm[i] = p[i & 255];
+  })();
+  function fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function grad(h, x, y, z) {
+    h &= 15;
+    var u = h < 8 ? x : y;
+    var v = h < 4 ? y : (h === 12 || h === 14 ? x : z);
+    return ((h & 1) ? -u : u) + ((h & 2) ? -v : v);
+  }
+  function noise(x, y, z) {
+    var X = Math.floor(x), Y = Math.floor(y), Z = Math.floor(z);
+    x -= X; y -= Y; z -= Z;
+    X &= 255; Y &= 255; Z &= 255;
+    var u = fade(x), v = fade(y), w = fade(z);
+    var A = perm[X] + Y, AA = perm[A] + Z, AB = perm[A + 1] + Z;
+    var B = perm[X + 1] + Y, BA = perm[B] + Z, BB = perm[B + 1] + Z;
+    return lerp(
+      lerp(lerp(grad(perm[AA], x, y, z), grad(perm[BA], x - 1, y, z), u),
+           lerp(grad(perm[AB], x, y - 1, z), grad(perm[BB], x - 1, y - 1, z), u), v),
+      lerp(lerp(grad(perm[AA + 1], x, y, z - 1), grad(perm[BA + 1], x - 1, y, z - 1), u),
+           lerp(grad(perm[AB + 1], x, y - 1, z - 1), grad(perm[BB + 1], x - 1, y - 1, z - 1), u), v),
+      w);
+  }
+
+  /* ---------- drawing ---------- */
+  var size = 300, dpr = 1;
+  function fit() {
+    var r = canvas.parentElement.getBoundingClientRect();
+    size = Math.max(120, r.width);
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(size * dpr);
+    canvas.height = Math.round(size * dpr);
+  }
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(canvas.parentElement);
+  window.addEventListener('resize', fit);
+  fit();
+
+  var darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  var calmQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  function isDark() {
+    var t = document.documentElement.getAttribute('data-theme');
+    return t === 'dark' || (t !== 'light' && darkQuery.matches);
+  }
+
+  // one colour (sage) and a slightly deeper rim
+  var BODY = { light: [185, 210, 195], dark: [146, 176, 160] };
+  var RIM = { light: [165, 194, 178], dark: [170, 198, 183] };
+  function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
+
+  var STEPS = 110;
+  function edge(theta, seed, t, R, amp) {
+    var x = Math.cos(theta), y = Math.sin(theta);
+    var slow = noise(x * 0.9 + seed, y * 0.9 + seed * 1.7, t);
+    var mid = noise(x * 1.7 + seed * 3.1, y * 1.7, t * 1.3 + seed);
+    return R * (1 + amp * (slow * 0.125 + mid * 0.025));
+  }
+
+
+  function draw() {
+    var dark = isDark();
+    var amp = calmQuery.matches ? 0.45 : 1;
+    var cx = size / 2, cy = size / 2;
+    var R = size * (0.17 + 0.22 * level);
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, size, size);
+
+    // a single body in a single colour
+    ctx.globalCompositeOperation = 'source-over';
+    var body = dark ? BODY.dark : BODY.light;
+    var rim = dark ? RIM.dark : RIM.light;
+    for (var i = 0; i < 1; i++) {
+      var seed = 1.3;
+      var r = R;
+      var ox = cx + R * 0.07 * noise(seed, wob * 0.5, 0.5) * amp;
+      var oy = cy + R * 0.07 * noise(0.5, seed, wob * 0.5) * amp;
+      var col = rgba(body, 0.94);
+
+      ctx.beginPath();
+      var px = 0, py = 0, fx = 0, fy = 0;
+      for (var s = 0; s <= STEPS; s++) {
+        var th = (s % STEPS) / STEPS * Math.PI * 2;
+        var rr = edge(th, seed, wob + i * 0.4, r, amp);
+        var x = ox + Math.cos(th) * rr, y = oy + Math.sin(th) * rr;
+        if (s === 0) { fx = x; fy = y; }
+        else if (s === 1) { ctx.moveTo((px + x) / 2, (py + y) / 2); }
+        else { ctx.quadraticCurveTo(px, py, (px + x) / 2, (py + y) / 2); }
+        px = x; py = y;
+      }
+      var th1 = 1 / STEPS * Math.PI * 2;
+      var r1 = edge(th1, seed, wob + i * 0.4, r, amp);
+      var x1 = ox + Math.cos(th1) * r1, y1 = oy + Math.sin(th1) * r1;
+      ctx.quadraticCurveTo(fx, fy, (fx + x1) / 2, (fy + y1) / 2);
+      ctx.closePath();
+
+      ctx.shadowColor = rgba(body, 0.75);
+      ctx.shadowBlur = R * 0.08 * dpr;
+      ctx.fillStyle = col;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = 'transparent';
+      ctx.lineWidth = Math.max(1.5, size * 0.004);
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = rgba(rim, 0.85);
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = 'transparent';
+
+    // soft light at the heart
+    ctx.globalCompositeOperation = 'source-over';
+    var hx = cx - R * 0.14 + R * 0.1 * noise(wob * 0.4, 3.3, 9.1);
+    var hy = cy - R * 0.18 + R * 0.1 * noise(7.7, wob * 0.4, 2.2);
+    var core = ctx.createRadialGradient(hx, hy, 0, hx, hy, R * 0.75);
+    core.addColorStop(0, 'rgba(255,255,255,' + (dark ? 0.1 : 0.26) + ')');
+    core.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = core;
+    ctx.beginPath();
+    ctx.arc(hx, hy, R * 0.75, 0, Math.PI * 2);
+    ctx.fill();
+
+  }
+
+  /* ---------- main loop ---------- */
+  function ease(p) { return 0.5 - 0.5 * Math.cos(Math.PI * p); }
+
+  var last = performance.now();
+  function frame(now) {
+    var dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
+    last = now;
+    wob += dt * 0.16;
+
+    if (state === 'running') {
+      elapsed = (performance.now() - startedAt) / 1000;
+      if (elapsed >= duration) finish();
+    }
+
+    var target = 0, cue, count = '';
+    if (state === 'running' || state === 'paused') {
+      var c = elapsed % CYCLE;
+      if (c < IN) { target = ease(c / IN); cue = 'Breathe in'; count = String(Math.min(IN, Math.floor(c) + 1)); }
+      else { target = 1 - ease((c - IN) / OUT); cue = 'Breathe out'; count = String(Math.min(OUT, Math.floor(c - IN) + 1)); }
+      if (state === 'paused') cue = 'Paused';
+    } else if (state === 'done') {
+      cue = 'Session complete';
+    } else {
+      cue = 'Four seconds in, six seconds out';
+    }
+    level += (target - level) * (1 - Math.exp(-dt * 8));
+
+    setCue(cue);
+    setCount(count);
+    setClock(fmt(state === 'idle' ? readMinutes() * 60 : duration - elapsed));
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  syncControls();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
